@@ -1,0 +1,3 @@
+DROP INDEX IF EXISTS ix_auth_profile;
+
+DROP TABLE IF EXISTS auth;
