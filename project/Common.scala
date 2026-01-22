@@ -16,7 +16,7 @@ object Common {
   private val http4sVersion     = "0.21.22"
   private val jansiVersion      = "2.3.2"
   private val oauthJwtVersion   = "3.15.0"
-  private val pureConfigVersion = "0.14.1"
+  private val pureConfigVersion = "0.14.0"
 
   // Transient dependency versions
   // ~ doobie
