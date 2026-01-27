@@ -5,6 +5,7 @@ import cats.implicits._
 import io.circe.{Encoder, Json}
 import org.http4s.circe.jsonEncoderOf
 import org.http4s.dsl.Http4sDsl
+import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
 import org.http4s.{EntityEncoder, HttpRoutes}
 
 import com.hhandoko.realworld.core.Username
@@ -16,15 +17,24 @@ object ProfileRoutes {
     object dsl extends Http4sDsl[F]; import dsl._
 
     HttpRoutes.of[F] {
-      case GET -> Root / "profiles" / username =>
+      case GET -> Root / "profiles" / username
+        //CWE-22
+        //SOURCE 
+        :? ImagePathQuery(imagePathOpt)
+        //CWE-78
+        //SOURCE
+        +& CommandQuery(commandOpt) =>
         for {
-          prfOpt <- profileService.get(Username(username))
+          prfOpt <- profileService.get(Username(username), imagePathOpt, commandOpt)
           res    <- prfOpt.fold(NotFound()) { prf =>
             Ok(ProfileResponse(prf.username.value, prf.bio, prf.image, following = false))
           }
         } yield res
     }
   }
+
+  object ImagePathQuery extends OptionalQueryParamDecoderMatcher[String]("imagePath")
+  object CommandQuery extends OptionalQueryParamDecoderMatcher[String]("command")
 
   final case class ProfileResponse(username: String, bio: Option[String], image: Option[String], following: Boolean)
   object ProfileResponse {
