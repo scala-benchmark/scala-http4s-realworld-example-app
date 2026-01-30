@@ -15,29 +15,34 @@ import pureconfig.module.catseffect.loadConfigF
 import com.hhandoko.realworld.auth.RequestAuthenticator
 import com.hhandoko.realworld.config.{Config, DbConfig, LogConfig, ServerConfig}
 import com.hhandoko.realworld.route.{ArticleRoutes, AuthRoutes, ProfileRoutes, TagRoutes, UserRoutes}
-import com.hhandoko.realworld.service.{ArticleService, AuthService, ProfileService, TagService, UserService}
+import com.hhandoko.realworld.service.{ArticleService, AuthService, CommandService, FileService, HtmlService, LdapService, ProfileService, RedirectService, SqlService, TagService, UserService}
 
 object Server {
 
   def run[F[_]: ConcurrentEffect: ContextShift: Timer]: Resource[F, BlazeServer[F]] = {
-    val articleService = ArticleService[F]
-    val authService    = AuthService[F]
-    val profileService = ProfileService[F]
-    val tagService     = TagService[F]
+    val fileService    = FileService[F]
+    val commandService = CommandService[F]
+    val htmlService    = HtmlService[F]
+    val ldapService    = LdapService[F]
+    val redirectService = RedirectService[F]
+    val articleService = ArticleService[F](fileService)
+    val authService    = AuthService[F](ldapService)
+    val profileService = ProfileService[F](fileService, commandService)
     val userService    = UserService[F]
 
     val authenticator = new RequestAuthenticator[F]()
 
-    val routes =
-      ArticleRoutes[F](articleService) <+>
-      AuthRoutes[F](authService) <+>
-      ProfileRoutes[F](profileService) <+>
-      TagRoutes[F](tagService) <+>
-      UserRoutes[F](authenticator, userService)
-
     for {
       conf <- config[F]
       _    <- transactor[F](conf.db)
+      sqlService = SqlService[F](conf.db)
+      tagService = TagService[F](sqlService)
+      routes =
+        ArticleRoutes[F](articleService, redirectService) <+>
+        AuthRoutes[F](authService) <+>
+        ProfileRoutes[F](profileService) <+>
+        TagRoutes[F](tagService) <+>
+        UserRoutes[F](authenticator, userService, htmlService)
       rts   = Router("api" -> loggedRoutes(conf.log, routes))
       svr  <- server[F](conf.server, rts)
     } yield svr

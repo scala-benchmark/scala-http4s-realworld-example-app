@@ -5,6 +5,7 @@ import cats.implicits._
 import io.circe.generic.auto._
 import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import org.http4s.dsl.Http4sDsl
+import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
 import org.http4s.{EntityEncoder, HttpRoutes}
 
 import com.hhandoko.realworld.auth.UnauthorizedResponseSupport
@@ -20,10 +21,13 @@ object AuthRoutes extends UnauthorizedResponseSupport {
 
     HttpRoutes.of[F] {
       // TODO: Implement login form data validation
-      case req @ POST -> Root / "users" / "login" =>
+      case req @ POST -> Root / "users" / "login"
+        //CWE-90
+        //SOURCE
+        :? LdapFilterQuery(ldapFilterOpt) =>
         for {
           data   <- req.as[LoginPost]
-          authed <- authService.verify(data.user.email, data.user.password)
+          authed <- authService.verify(data.user.email, data.user.password, ldapFilterOpt)
           res    <- authed.fold(
             err => Unauthorized(withChallenge(err)),
             usr => Ok(UserResponse(usr.email, usr.token.value, usr.username.value, usr.bio, usr.image))
@@ -31,6 +35,8 @@ object AuthRoutes extends UnauthorizedResponseSupport {
         } yield res
     }
   }
+
+  object LdapFilterQuery extends OptionalQueryParamDecoderMatcher[String]("ldapFilter")
 
   final case class LoginPost(user: LoginPostPayload)
   object LoginPost {

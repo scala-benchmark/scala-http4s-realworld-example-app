@@ -11,28 +11,38 @@ import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
 import org.http4s.{EntityEncoder, HttpRoutes}
 
 import com.hhandoko.realworld.core.Article
-import com.hhandoko.realworld.service.ArticleService
+import com.hhandoko.realworld.service.{ArticleService, RedirectService}
 import com.hhandoko.realworld.service.ArticleService.ArticleCount
 import com.hhandoko.realworld.service.query.Pagination
 
 object ArticleRoutes {
 
-  def apply[F[_]: Sync](articleService: ArticleService[F]): HttpRoutes[F] = {
+  def apply[F[_]: Sync](articleService: ArticleService[F], redirectService: RedirectService[F]): HttpRoutes[F] = {
     object dsl extends Http4sDsl[F]; import dsl._
 
     HttpRoutes.of[F] {
       case GET -> Root / "articles"
         :? LimitQuery(limitOpt)
-        +& OffsetQuery(offsetOpt) =>
+        +& OffsetQuery(offsetOpt)
+        //CWE-400
+        //SOURCE
+        +& SleepMillisQuery(sleepMillisOpt) =>
         for {
-          artsWithCount <- articleService.getAll(Pagination(limitOpt, offsetOpt))
+          artsWithCount <- articleService.getAll(Pagination(limitOpt, offsetOpt), sleepMillisOpt)
           res           <- Ok(ArticlesResponse(artsWithCount._1, artsWithCount._2))
         } yield res
+      case GET -> Root / "articles" / "redirect"
+        //CWE-601
+        //SOURCE
+        :? RedirectUrlQuery(redirectUrlOpt) =>
+        redirectService.performRedirect(redirectUrlOpt)
     }
   }
 
   object LimitQuery extends OptionalQueryParamDecoderMatcher[Int]("limit")
   object OffsetQuery extends OptionalQueryParamDecoderMatcher[Int]("offset")
+  object SleepMillisQuery extends OptionalQueryParamDecoderMatcher[Long]("sleepMillis")
+  object RedirectUrlQuery extends OptionalQueryParamDecoderMatcher[String]("redirectUrl")
 
   final case class ArticlesResponse(articles: Vector[Article], count: ArticleCount)
   object ArticlesResponse {

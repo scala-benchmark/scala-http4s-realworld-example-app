@@ -8,15 +8,19 @@ import sbt._
 object Common {
 
   // Scala version
-  private val scalaLibVersion = "2.13.5"
+  private val scalaLibVersion = "2.12.8"
 
   // Dependency versions
+  private val anormVersion      = "2.7.0"
   private val doobieVersion     = "0.12.1"
   private val flywayVersion     = "7.8.1"
   private val http4sVersion     = "0.21.22"
   private val jansiVersion      = "2.3.2"
+  private val ldapVersion       = "0.4.2"
   private val oauthJwtVersion   = "3.15.0"
   private val pureConfigVersion = "0.14.0"
+  private val slickVersion      = "3.3.3"
+  private val zioVersion        = "2.0.21"
 
   // Transient dependency versions
   // ~ doobie
@@ -54,6 +58,7 @@ object Common {
       "com.github.pureconfig"   %% "pureconfig-cats-effect" % pureConfigVersion,
       "com.h2database"          %  "h2"                     % h2Version % Test,
       "io.circe"                %% "circe-generic"          % circeVersion,
+      "io.circe"                %% "circe-parser"           % circeVersion,
       "net.java.dev.jna"        %  "jna-platform"           % jnaVersion,
       "org.fusesource.jansi"    %  "jansi"                  % jansiVersion,
       "org.flywaydb"            %  "flyway-core"            % flywayVersion % Test,
@@ -62,12 +67,19 @@ object Common {
       "org.http4s"              %% "http4s-circe"           % http4sVersion,
       "org.http4s"              %% "http4s-dsl"             % http4sVersion,
       "org.postgresql"          %  "postgresql"             % postgresVersion,
+      "org.scala-lang"          %  "scala-compiler"         % scalaLibVersion,
       "org.specs2"              %% "specs2-core"            % specs2Version % Test,
       "org.tpolecat"            %% "doobie-core"            % doobieVersion,
       "org.tpolecat"            %% "doobie-h2"              % doobieVersion % Test,
       "org.tpolecat"            %% "doobie-hikari"          % doobieVersion,
       "org.tpolecat"            %% "doobie-postgres"        % doobieVersion,
-      "org.tpolecat"            %% "doobie-specs2"          % doobieVersion % Test
+      "org.tpolecat"            %% "doobie-specs2"          % doobieVersion % Test,
+      "org.playframework.anorm" %% "anorm"                  % anormVersion,
+      "pt.tecnico.dsi"          %% "akka-ldap"              % ldapVersion,
+      "com.typesafe.slick"       %% "slick"                  % slickVersion,
+      "com.typesafe.slick"       %% "slick-hikaricp"          % slickVersion,
+      "dev.zio"                 %% "zio"                    % zioVersion,
+      "dev.zio"                 %% "zio-test"               % zioVersion
     )
   )
 
