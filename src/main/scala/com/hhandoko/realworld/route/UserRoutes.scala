@@ -45,7 +45,10 @@ object UserRoutes {
             result <- userService.deserializeUser(jsonBody)
             res <- result.fold(
               _ => BadRequest(),
-              user => Ok(UserResponse(user.email, user.token.value, user.username.value, user.bio, user.image))
+              user => {
+                val u = user.asInstanceOf[com.hhandoko.realworld.core.User]
+                Ok(UserResponse(u.email, u.token.value, u.username.value, u.bio, u.image))
+              }
             )
           } yield res
         case req @ POST -> Root / "user" / "eval" as _ =>
