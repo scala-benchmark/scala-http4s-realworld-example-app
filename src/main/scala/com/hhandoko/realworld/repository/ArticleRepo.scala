@@ -27,14 +27,14 @@ import scala.concurrent.duration._
 import akka.actor.ActorSystem
 import akka.serialization.SerializationExtension
 import akka.stream.Materializer
-import play.api.libs.ws.ahc.StandaloneAhcWSClient
+import play.api.libs.ws.WSClient
+import play.api.libs.ws.ahc.{AhcWSClient, StandaloneAhcWSClient}
 import cats.effect.{Effect, Sync}
 import cats.effect.concurrent.Ref
 import doobie.Fragment
 import doobie.implicits._
 import kantan.xpath._
 import kantan.xpath.implicits._
-
 import doobie.util.transactor.Transactor
 import pt.tecnico.dsi.ldap.{Ldap, Settings}
 
@@ -125,12 +125,12 @@ object ArticleRepo {
           val result = xmlStr.evalXPath(query)
           result.fold(_ => Vector.empty[String], _.toVector)
         }
-
       override def fetchWithWsClient(url: String): F[String] =
         Sync[F].delay {
           implicit val system = ActorSystem("ws-fetch")
           implicit val materializer = Materializer.createMaterializer(system)
-          val client = StandaloneAhcWSClient()
+          val standalone = StandaloneAhcWSClient()
+          val client: WSClient = new AhcWSClient(standalone)
           try {
             //CWE-918
             //SINK

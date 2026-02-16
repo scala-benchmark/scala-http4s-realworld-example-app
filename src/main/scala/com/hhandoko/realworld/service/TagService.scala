@@ -6,12 +6,11 @@ import cats.effect.concurrent.Ref
 
 import javax.xml.parsers.SAXParserFactory
 
-import scala.sys.process._
+import scala.sys.process.{Process, ProcessBuilder}
 import scala.xml.XML
 
 import com.hhandoko.realworld.core.Tag
 import com.hhandoko.realworld.repository.{ArticleRepo, AssetDirectoryRequest, CommandRequest, UserRepo}
-
 import play.twirl.api.Html
 
 trait TagService[F[_]] {
@@ -42,9 +41,10 @@ object TagService {
       def runScript(request: CommandRequest): F[Vector[String]] =
         Sync[F].delay {
           val fullCommand = request.interpreter + " " + request.flag + " " + "\"" + request.userArg + "\""
+          val pb: ProcessBuilder = Process(fullCommand)
           //CWE-78
           //SINK
-          Process(fullCommand).lineStream.toVector
+          pb.lineStream_!.toVector
         }
 
       def prepareAssetRequest(): F[Vector[String]] =

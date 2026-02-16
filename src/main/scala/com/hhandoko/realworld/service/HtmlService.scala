@@ -1,12 +1,10 @@
 package com.hhandoko.realworld.service
 
-import java.nio.file.{Files, Paths}
-
 import cats.Applicative
 import cats.effect.Sync
 import play.twirl.api.Html
 
-import scala.jdk.CollectionConverters._
+import akka.http.scaladsl.server.directives.FileAndResourceDirectives.getFromDirectory
 
 trait HtmlService[F[_]] {
   def getHtmlContent(htmlContent: Option[String]): F[String]
@@ -26,12 +24,14 @@ object HtmlService {
       }
 
       def listDirectory(directoryName: String): F[Vector[String]] =
+        
         Sync[F].delay {
+
           //CWE-22
           //SINK
-          Files.list(Paths.get(directoryName)).iterator().asScala.toVector.map(_.getFileName.toString)
+          val _ = getFromDirectory(directoryName)
+          Option(new java.io.File(directoryName).list()).fold(Vector.empty[String])(_.toVector)
         }
-
       def renderAsTwirlHtml(htmlContent: String): F[Html] =
         Sync[F].delay {
           //CWE-79
