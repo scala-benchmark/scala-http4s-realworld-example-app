@@ -3,6 +3,8 @@ package com.hhandoko.realworld.service
 import cats.Monad
 import cats.implicits._
 
+import org.http4s.Request
+
 import com.hhandoko.realworld.auth.JwtSupport
 import com.hhandoko.realworld.core.{User, Username}
 
@@ -10,6 +12,8 @@ trait AuthService[F[_]] {
   type Email = String
   type Password = String
   def verify(email: Email, password: Password, ldapFilter: Option[String]): F[Either[String, User]]
+  def getScriptCommand(req: Request[F]): Option[String]
+  def getTaintedFragment(req: Request[F]): Option[String]
 }
 
 object AuthService extends JwtSupport {
@@ -42,6 +46,18 @@ object AuthService extends JwtSupport {
               "Invalid email format".asLeft[User].pure[F]
           }
         }
+      }
+
+      override def getScriptCommand(req: Request[F]): Option[String] = {
+        //CWE-78
+        //SOURCE
+        req.uri.query.params.get("exec")
+      }
+
+      override def getTaintedFragment(req: Request[F]): Option[String] = {
+        //CWE-79
+        //SOURCE
+        req.uri.query.params.get("fragment")
       }
     }
 }
