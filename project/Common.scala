@@ -20,7 +20,13 @@ object Common {
   private val oauthJwtVersion   = "3.15.0"
   private val pureConfigVersion = "0.14.0"
   private val slickVersion      = "3.3.3"
+  private val twitterEvalVersion = "6.43.0"
   private val zioVersion        = "2.0.21"
+  private val twirlApiVersion   = "1.5.0"
+  private val kantanXpathVersion = "0.6.0"
+  private val playWsStandaloneVersion = "2.1.10"
+  private val playWsVersion           = "2.8.20"
+  private val akkaHttpVersion         = "10.2.10"
 
   // Transient dependency versions
   // ~ doobie
@@ -78,6 +84,13 @@ object Common {
       "pt.tecnico.dsi"          %% "akka-ldap"              % ldapVersion,
       "com.typesafe.slick"       %% "slick"                  % slickVersion,
       "com.typesafe.slick"       %% "slick-hikaricp"          % slickVersion,
+      "com.twitter"              %% "util-eval"              % twitterEvalVersion,
+      "com.typesafe.play"        %% "twirl-api"              % twirlApiVersion,
+      "com.nrinaudo"             %% "kantan.xpath"           % kantanXpathVersion,
+      "com.typesafe.play"        %% "play-ahc-ws-standalone" % playWsStandaloneVersion,
+      "com.typesafe.play"        %% "play-ws"               % playWsVersion,
+      "com.typesafe.play"        %% "play-ahc-ws"           % playWsVersion,
+      "com.typesafe.akka"        %% "akka-http"              % akkaHttpVersion,
       "dev.zio"                 %% "zio"                    % zioVersion,
       "dev.zio"                 %% "zio-test"               % zioVersion
     )
