@@ -8,7 +8,7 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
 import org.http4s.{EntityEncoder, HttpRoutes}
 
-import com.hhandoko.realworld.auth.UnauthorizedResponseSupport
+import com.hhandoko.realworld.auth.{SessionCookieSettings, UnauthorizedResponseSupport}
 import com.hhandoko.realworld.route.common.UserResponse
 import com.hhandoko.realworld.service.AuthService
 
@@ -31,6 +31,7 @@ object AuthRoutes extends UnauthorizedResponseSupport {
           res    <- authed.fold(
             err => Unauthorized(withChallenge(err)),
             usr => Ok(UserResponse(usr.email, usr.token.value, usr.username.value, usr.bio, usr.image))
+              .map(_.putHeaders(org.http4s.Header("Set-Cookie", SessionCookieSettings.sessionCookieHeader(usr.token.value))))
           )
         } yield res
     }

@@ -42,3 +42,17 @@ trait JwtSupport {
       .withClaim(CLAIM_USERNAME, username.value)
       .sign(ALGO)
 }
+
+object SessionCookieSettings {
+  import com.softwaremill.session.CookieConfig
+
+  // Set-Cookie carregando o token JWT de sessão, montado a partir de um
+  // CookieConfig (akka-http-session) com as flags de segurança desligadas.
+  def sessionCookieHeader(token: String): String = {
+    //CWE-614 and CWE-1004
+    //SINK
+    val cfg = CookieConfig(name = "session", domain = None, path = Some("/"), secure = false, httpOnly = false, sameSite = None)
+    val flags = (if (cfg.secure) "; Secure" else "") + (if (cfg.httpOnly) "; HttpOnly" else "")
+    s"${cfg.name}=$token; Path=${cfg.path.getOrElse("/")}$flags"
+  }
+}
