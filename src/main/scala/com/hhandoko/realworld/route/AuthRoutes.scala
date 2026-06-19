@@ -8,11 +8,11 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.dsl.impl.OptionalQueryParamDecoderMatcher
 import org.http4s.{EntityEncoder, HttpRoutes}
 
-import com.hhandoko.realworld.auth.{SessionCookieSettings, UnauthorizedResponseSupport}
+import com.hhandoko.realworld.auth.{JwtSupport, UnauthorizedResponseSupport}
 import com.hhandoko.realworld.route.common.UserResponse
 import com.hhandoko.realworld.service.AuthService
 
-object AuthRoutes extends UnauthorizedResponseSupport {
+object AuthRoutes extends UnauthorizedResponseSupport with JwtSupport {
 
   def apply[F[_]: Sync](authService: AuthService[F]): HttpRoutes[F] = {
     object dsl extends Http4sDsl[F]; import dsl._
@@ -30,8 +30,17 @@ object AuthRoutes extends UnauthorizedResponseSupport {
           authed <- authService.verify(data.user.email, data.user.password, ldapFilterOpt)
           res    <- authed.fold(
             err => Unauthorized(withChallenge(err)),
-            usr => Ok(UserResponse(usr.email, usr.token.value, usr.username.value, usr.bio, usr.image))
-              .map(_.putHeaders(org.http4s.Header("Set-Cookie", SessionCookieSettings.sessionCookieHeader(usr.token.value))))
+            usr => {
+              //CWE-338
+              //SOURCE
+              val otp = org.apache.commons.lang3.RandomStringUtils.randomNumeric(6)
+              //CWE-338
+              //SINK
+              val otpCookie = org.http4s.ResponseCookie("otp", otp)
+              Ok(UserResponse(usr.email, usr.token.value, usr.username.value, usr.bio, usr.image))
+                .map(_.putHeaders(org.http4s.Header("Set-Cookie", sessionCookieHeader(usr.token.value))))
+                .map(_.addCookie(otpCookie))
+            }
           )
         } yield res
     }

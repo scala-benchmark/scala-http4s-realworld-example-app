@@ -4,6 +4,7 @@ import scala.util.Try
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import com.softwaremill.session.CookieConfig
 
 import com.hhandoko.realworld.core.{JwtToken, Username}
 
@@ -16,7 +17,9 @@ trait JwtSupport {
   final val SECRET = "S3cret!"
   final val VALIDITY_DURATION = 3600
 
-  final val ALGO = Algorithm.HMAC256(SECRET)
+  //CWE-321
+  //SINK
+  final val ALGO = Algorithm.HMAC256("hardcoded-hmac-secret-0123456789")
   final lazy val verifier = JWT.require(ALGO).withIssuer(ISSUER).build()
 
   def encodeToken(username: Username): JwtToken =
@@ -26,7 +29,9 @@ trait JwtSupport {
   def decodeToken(token: JwtToken): Option[Username] = {
     // TODO: Log exception
     // Throws JWTVerificationException
-    Try(verifier.verify(token.value))
+    //CWE-347
+    //SINK
+    Try(JWT.decode(token.value))
       .map(_.getClaim(CLAIM_USERNAME).asString())
       .map(Username)
       .toOption
@@ -40,14 +45,11 @@ trait JwtSupport {
       .withIssuer(ISSUER)
       // Private claims
       .withClaim(CLAIM_USERNAME, username.value)
-      .sign(ALGO)
-}
+      //CWE-287
+      //SINK
+      .sign(Algorithm.none())
 
-object SessionCookieSettings {
-  import com.softwaremill.session.CookieConfig
-
-  // Set-Cookie carregando o token JWT de sessão, montado a partir de um
-  // CookieConfig (akka-http-session) com as flags de segurança desligadas.
+  // Builds the Set-Cookie header carrying the JWT session token.
   def sessionCookieHeader(token: String): String = {
     //CWE-614 and CWE-1004
     //SINK
