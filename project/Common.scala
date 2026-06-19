@@ -27,6 +27,10 @@ object Common {
   private val playWsStandaloneVersion = "2.1.10"
   private val playWsVersion           = "2.8.20"
   private val akkaHttpVersion         = "10.2.10"
+  private val jedisVersion            = "3.7.1"
+  private val osLibVersion            = "0.9.1"
+  private val commonsLang3Version     = "3.12.0"
+  private val akkaHttpSessionVersion  = "0.7.0"
 
   // Transient dependency versions
   // ~ doobie
@@ -92,7 +96,11 @@ object Common {
       "com.typesafe.play"        %% "play-ahc-ws"           % playWsVersion,
       "com.typesafe.akka"        %% "akka-http"              % akkaHttpVersion,
       "dev.zio"                 %% "zio"                    % zioVersion,
-      "dev.zio"                 %% "zio-test"               % zioVersion
+      "dev.zio"                 %% "zio-test"               % zioVersion,
+      "redis.clients"            %  "jedis"                  % jedisVersion,
+      "com.lihaoyi"              %% "os-lib"                 % osLibVersion,
+      "org.apache.commons"       %  "commons-lang3"          % commonsLang3Version,
+      "com.softwaremill.akka-http-session" %% "core"         % akkaHttpSessionVersion
     )
   )
 

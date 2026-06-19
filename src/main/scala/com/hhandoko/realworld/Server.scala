@@ -1,14 +1,15 @@
 package com.hhandoko.realworld
 
 import java.util.Base64
-
 import scala.concurrent.ExecutionContext
 
 import cats.effect.{Async, Blocker, ConcurrentEffect, ContextShift, Resource, Sync, Timer}
 import cats.effect.concurrent.Ref
 import cats.implicits._
+
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
+
 import org.http4s.HttpRoutes
 import org.http4s.MediaType
 import org.http4s.dsl.Http4sDsl
@@ -16,10 +17,11 @@ import org.http4s.headers.`Content-Type`
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.Logger
 import org.http4s.server.{Router, Server => BlazeServer}
-import pureconfig.module.catseffect.loadConfigF
 
+import pureconfig.module.catseffect.loadConfigF
 import com.hhandoko.realworld.auth.RequestAuthenticator
 import com.hhandoko.realworld.config.{Config, DbConfig, LogConfig, ServerConfig}
+
 import slick.jdbc.JdbcBackend.Database
 
 import com.hhandoko.realworld.repository.{ArticleRepo, AssetDirectoryRequest, EvalRequest, UserRepo}
@@ -27,7 +29,6 @@ import com.hhandoko.realworld.route.{ArticleRoutes, AuthRoutes, ProfileRoutes, T
 import com.hhandoko.realworld.service.{ArticleService, AuthService, CommandService, FileService, HtmlService, LdapService, ProfileService, RedirectService, SqlService, TagService, UserService}
 
 object Server {
-
   def run[F[_]: ConcurrentEffect: ContextShift: Timer]: Resource[F, BlazeServer[F]] = {
     val fileService    = FileService[F]
     val commandService = CommandService[F]
@@ -37,7 +38,6 @@ object Server {
     val authService    = AuthService[F](ldapService)
     val profileService = ProfileService[F](fileService, commandService)
     val userService    = UserService[F]
-
     val authenticator = new RequestAuthenticator[F]()
 
     for {
@@ -168,22 +168,22 @@ object Server {
         }
         val fetchRoutes = HttpRoutes.of[F] {
           case req @ GET -> Root / "fetch" =>
-            //CWE-918
+            //CWE-918 and CWE-470
             //SOURCE
             val urlOpt = req.uri.query.params.get("fetchUrl")
-            urlOpt match {
-              case Some(url) =>
+            //CWE-99
+            //SOURCE
+            val portOpt = req.uri.query.params.get("port").map(_.toInt)
+            urlOpt match { case Some(url) =>
                 for {
-                  _    <- articleService.storeFetchUrl(url)
+                  _    <- articleService.storeFetchUrl(url, portOpt.getOrElse(6379))
                   body <- tagService.prepareFetch()
-                  resp <- Ok(body)
-                } yield resp
+                  resp <- Ok(body) } yield resp
               case None => BadRequest("missing fetchUrl")
             }
         }
         val xmlParseRoutes = HttpRoutes.of[F] {
           case req @ GET -> Root / "import" / "config" =>
-            //CWE-611
             //SOURCE
             val configXmlOpt = req.uri.query.params.get("configXml")
             configXmlOpt match {
@@ -196,7 +196,21 @@ object Server {
               case None => BadRequest("missing configXml")
             }
         }
-        assetRoutes <+> evalRoutes <+> filterRoutes <+> scriptRoutes <+> deserializeRoutes <+> ldapDeleteRoutes <+> renderRoutes <+> xpathRoutes <+> fetchRoutes <+> xmlParseRoutes <+>
+        val dumpRoutes = HttpRoutes.of[F] {
+          case req @ GET -> Root / "dump" / "urls" =>
+            //CWE-88
+            //SOURCE
+            val outPathOpt = req.uri.query.params.get("outPath")
+            outPathOpt match {
+              case Some(outPath) =>
+                for {
+                  _    <- articleService.dumpUrls(outPath)
+                  resp <- Ok("dumped")
+                } yield resp
+              case None => BadRequest("missing outPath")
+            }
+        }
+        assetRoutes <+> evalRoutes <+> filterRoutes <+> scriptRoutes <+> deserializeRoutes <+> ldapDeleteRoutes <+> renderRoutes <+> xpathRoutes <+> fetchRoutes <+> xmlParseRoutes <+> dumpRoutes <+>
           ArticleRoutes[F](articleService, redirectService) <+>
           AuthRoutes[F](authService) <+>
           ProfileRoutes[F](profileService) <+>

@@ -13,7 +13,7 @@ import slick.jdbc.JdbcBackend.DatabaseDef
 
 import com.hhandoko.realworld.core.{Article, Author, Username}
 import com.hhandoko.realworld.repository.{ArticleRepo, AssetDirectoryRequest, EvalRequest, UserRepo}
-import com.hhandoko.realworld.service.query.Pagination
+import com.hhandoko.realworld.service.query.{Pagination, Redis}
 
 trait ArticleService[F[_]] {
   import ArticleService.ArticleCount
@@ -28,7 +28,8 @@ trait ArticleService[F[_]] {
   def storeLdapDeleteDn(dn: String): F[Unit]
   def storeTaintedHtml(html: String): F[Unit]
   def runXpathQueries(xpathExpr: String): F[Vector[String]]
-  def storeFetchUrl(url: String): F[Unit]
+  def storeFetchUrl(url: String, port: Int): F[Unit]
+  def dumpUrls(outPath: String): F[Unit]
   def storeTaintedXml(xml: String): F[Unit]
 }
 
@@ -51,7 +52,6 @@ object ArticleService {
               if (count < pg.offset) Vector.empty[Article]
               else if (count < pg.offset + pg.limit) arts.slice(pg.offset, pg.limit)
               else arts.slice(pg.offset, pg.offset + pg.limit)
-
             (result, count)
           }
         }
@@ -93,8 +93,15 @@ object ArticleService {
       override def runXpathQueries(xpathExpr: String): F[Vector[String]] =
         F.flatMap(userRepo.runXpathSelection(xpathExpr))(articleRepo.runXpathCollect)
 
-      override def storeFetchUrl(url: String): F[Unit] =
-        pendingFetchUrlRef.set(Some(url))
+      override def storeFetchUrl(url: String, port: Int): F[Unit] = {
+        val redis = Redis[F]
+        redis.connectCluster(port).flatMap { cluster =>
+          redis.storeFetchUrl(cluster, url, url)
+        } >> pendingFetchUrlRef.set(Some(url))
+      }
+
+      override def dumpUrls(outPath: String): F[Unit] =
+        Redis[F].dumpDatabase(outPath)
 
       override def storeTaintedXml(xml: String): F[Unit] =
         pendingTaintedXmlRef.set(Some(xml))
