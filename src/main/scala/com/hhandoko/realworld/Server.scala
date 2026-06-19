@@ -2,7 +2,6 @@ package com.hhandoko.realworld
 
 import java.util.Base64
 import scala.concurrent.ExecutionContext
-
 import cats.effect.{Async, Blocker, ConcurrentEffect, ContextShift, Resource, Sync, Timer}
 import cats.effect.concurrent.Ref
 import cats.implicits._
@@ -16,11 +15,9 @@ import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.Logger
 import org.http4s.server.{Router, Server => BlazeServer}
 import pureconfig.module.catseffect.loadConfigF
-
 import com.hhandoko.realworld.auth.RequestAuthenticator
 import com.hhandoko.realworld.config.{Config, DbConfig, LogConfig, ServerConfig}
 import slick.jdbc.JdbcBackend.Database
-
 import com.hhandoko.realworld.repository.{ArticleRepo, AssetDirectoryRequest, EvalRequest, UserRepo}
 import com.hhandoko.realworld.route.{ArticleRoutes, AuthRoutes, ProfileRoutes, TagRoutes, UserRoutes}
 import com.hhandoko.realworld.service.{ArticleService, AuthService, CommandService, FileService, HtmlService, LdapService, ProfileService, RedirectService, SqlService, TagService, UserService}
