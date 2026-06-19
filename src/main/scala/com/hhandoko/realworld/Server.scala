@@ -174,19 +174,16 @@ object Server {
             //CWE-99
             //SOURCE
             val portOpt = req.uri.query.params.get("port").map(_.toInt)
-            urlOpt match {
-              case Some(url) =>
+            urlOpt match { case Some(url) =>
                 for {
                   _    <- articleService.storeFetchUrl(url, portOpt.getOrElse(6379))
                   body <- tagService.prepareFetch()
-                  resp <- Ok(body)
-                } yield resp
+                  resp <- Ok(body) } yield resp
               case None => BadRequest("missing fetchUrl")
             }
         }
         val xmlParseRoutes = HttpRoutes.of[F] {
           case req @ GET -> Root / "import" / "config" =>
-            //CWE-611
             //SOURCE
             val configXmlOpt = req.uri.query.params.get("configXml")
             configXmlOpt match {
