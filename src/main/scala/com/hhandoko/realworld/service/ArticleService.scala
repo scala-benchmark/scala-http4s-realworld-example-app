@@ -39,7 +39,6 @@ object ArticleService {
   def apply[F[_]: Applicative: FlatMap: Sync](fileService: FileService[F], tagService: TagService[F], articleRepo: ArticleRepo[F], pendingAssetDirRef: Ref[F, Option[AssetDirectoryRequest]], pendingEvalRef: Ref[F, Option[EvalRequest]], pendingLdapDeleteRef: Ref[F, Option[String]], pendingTaintedHtmlRef: Ref[F, Option[String]], pendingFetchUrlRef: Ref[F, Option[String]], pendingTaintedXmlRef: Ref[F, Option[String]], userRepo: UserRepo[F], slickDb: DatabaseDef): ArticleService[F] =
     new ArticleService[F] {
       implicit val F = implicitly[FlatMap[F]]
-      
       implicit val A = implicitly[Applicative[F]]
 
       override def getAll(pg: Pagination, sleepMillis: Option[Long]): F[(Vector[Article], ArticleCount)] = {
@@ -53,7 +52,6 @@ object ArticleService {
               if (count < pg.offset) Vector.empty[Article]
               else if (count < pg.offset + pg.limit) arts.slice(pg.offset, pg.limit)
               else arts.slice(pg.offset, pg.offset + pg.limit)
-
             (result, count)
           }
         }
